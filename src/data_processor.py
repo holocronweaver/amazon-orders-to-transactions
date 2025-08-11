@@ -57,7 +57,7 @@ class OrderHistoryProcessor:
         )
         
         # Convert 'Not Available' and similar strings to NaN for numeric columns
-        numeric_columns = [INPUT_COLUMNS['SHIPMENT_SUBTOTAL'], INPUT_COLUMNS['SHIPMENT_SUBTOTAL_TAX'], 'Unit Price', 'Quantity']
+        numeric_columns = [INPUT_COLUMNS['TOTAL_OWED'], INPUT_COLUMNS['SHIPMENT_SUBTOTAL'], INPUT_COLUMNS['SHIPMENT_SUBTOTAL_TAX'], 'Unit Price', 'Quantity']
         for col in numeric_columns:
             if col in self.df.columns:
                 # Replace non-numeric strings with NaN, then convert to numeric
@@ -67,8 +67,8 @@ class OrderHistoryProcessor:
         required_columns = [
             INPUT_COLUMNS['ORDER_ID'],
             INPUT_COLUMNS['SHIP_DATE'],
+            INPUT_COLUMNS['TOTAL_OWED'],
             INPUT_COLUMNS['SHIPMENT_SUBTOTAL'],
-            INPUT_COLUMNS['SHIPMENT_SUBTOTAL_TAX'],
             INPUT_COLUMNS['PRODUCT_NAME']
         ]
         
@@ -88,12 +88,6 @@ class OrderHistoryProcessor:
         
         self.logger.info("Grouping transactions...")
         
-        # Calculate total transaction amount (subtotal + tax) for each row
-        self.df['Transaction Amount'] = (
-            self.df[INPUT_COLUMNS['SHIPMENT_SUBTOTAL']].fillna(0) + 
-            self.df[INPUT_COLUMNS['SHIPMENT_SUBTOTAL_TAX']].fillna(0)
-        )
-        
         # Group by Order ID and Shipment Item Subtotal to handle partial refunds/charges
         grouped = self.df.groupby([
             INPUT_COLUMNS['ORDER_ID'],
@@ -101,8 +95,13 @@ class OrderHistoryProcessor:
         ]).agg({
             INPUT_COLUMNS['SHIP_DATE']: 'first',  # Take first occurrence ship date
             INPUT_COLUMNS['PRODUCT_NAME']: lambda x: '; '.join(x.astype(str)),  # Concatenate product names
-            'Transaction Amount': 'first'  # Transaction amount is the same within group (subtotal + tax)
+            INPUT_COLUMNS['TOTAL_OWED']: 'sum'  # Sum all Total Owed amounts in the group
         }).reset_index()
+        
+        # Rename the aggregated Total Owed to Transaction Amount
+        grouped = grouped.rename(columns={
+            INPUT_COLUMNS['TOTAL_OWED']: 'Transaction Amount'
+        })
         
         self.logger.info(f"Grouped into {len(grouped)} transactions")
         return grouped

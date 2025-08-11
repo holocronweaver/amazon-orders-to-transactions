@@ -8,6 +8,7 @@ INPUT_COLUMNS = {
     'SHIP_DATE': 'Ship Date',
     'CURRENCY': 'Currency',
     'UNIT_PRICE': 'Unit Price',
+    'TOTAL_OWED': 'Total Owed',
     'SHIPMENT_SUBTOTAL': 'Shipment Item Subtotal',
     'SHIPMENT_SUBTOTAL_TAX': 'Shipment Item Subtotal Tax',
     'PRODUCT_NAME': 'Product Name',
@@ -33,6 +34,7 @@ PANDAS_DTYPES = {
     'Order ID': 'string', 
     'Currency': 'string',
     'Unit Price': 'object',  # Handle 'Not Available' values
+    'Total Owed': 'object',  # Handle 'Not Available' values
     'Shipment Item Subtotal': 'object',  # Handle 'Not Available' values
     'Shipment Item Subtotal Tax': 'object',  # Handle 'Not Available' values
     'Product Name': 'string',
