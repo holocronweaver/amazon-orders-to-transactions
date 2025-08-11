@@ -5,6 +5,7 @@ INPUT_COLUMNS = {
     'WEBSITE': 'Website',
     'ORDER_ID': 'Order ID',
     'ORDER_DATE': 'Order Date',
+    'SHIP_DATE': 'Ship Date',
     'CURRENCY': 'Currency',
     'UNIT_PRICE': 'Unit Price',
     'SHIPMENT_SUBTOTAL': 'Shipment Item Subtotal',
@@ -15,7 +16,7 @@ INPUT_COLUMNS = {
 
 # Output CSV column names
 OUTPUT_COLUMNS = [
-    'Order Date',
+    'Ship Date',
     'Order ID', 
     'Transaction Amount',
     'Product Names',

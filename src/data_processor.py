@@ -49,9 +49,10 @@ class OrderHistoryProcessor:
         
         self.logger.info("Cleaning data...")
         
-        # Parse order dates
-        self.df[INPUT_COLUMNS['ORDER_DATE']] = pd.to_datetime(
-            self.df[INPUT_COLUMNS['ORDER_DATE']], 
+        # Parse ship dates, handling 'Not Available' values
+        self.df[INPUT_COLUMNS['SHIP_DATE']] = pd.to_datetime(
+            self.df[INPUT_COLUMNS['SHIP_DATE']], 
+            errors='coerce',  # Convert invalid dates to NaT
             **DATE_PARSER_KWARGS
         )
         
@@ -65,7 +66,7 @@ class OrderHistoryProcessor:
         # Remove any rows with missing critical data
         required_columns = [
             INPUT_COLUMNS['ORDER_ID'],
-            INPUT_COLUMNS['ORDER_DATE'],
+            INPUT_COLUMNS['SHIP_DATE'],
             INPUT_COLUMNS['SHIPMENT_SUBTOTAL'],
             INPUT_COLUMNS['PRODUCT_NAME']
         ]
@@ -91,7 +92,7 @@ class OrderHistoryProcessor:
             INPUT_COLUMNS['ORDER_ID'],
             INPUT_COLUMNS['SHIPMENT_SUBTOTAL']
         ]).agg({
-            INPUT_COLUMNS['ORDER_DATE']: 'first',  # Take first occurrence date
+            INPUT_COLUMNS['SHIP_DATE']: 'first',  # Take first occurrence ship date
             INPUT_COLUMNS['PRODUCT_NAME']: lambda x: '; '.join(x.astype(str))  # Concatenate product names
         }).reset_index()
         
@@ -115,7 +116,7 @@ class OrderHistoryProcessor:
     def sort_by_date(self, df: pd.DataFrame) -> pd.DataFrame:
         """Sort transactions by date (most recent first)."""
         return df.sort_values(
-            INPUT_COLUMNS['ORDER_DATE'], 
+            INPUT_COLUMNS['SHIP_DATE'], 
             ascending=False
         ).reset_index(drop=True)
     
@@ -138,7 +139,7 @@ class OrderHistoryProcessor:
         
         # Rename columns for output
         output_df = final_df.rename(columns={
-            INPUT_COLUMNS['ORDER_DATE']: 'Order Date',
+            INPUT_COLUMNS['SHIP_DATE']: 'Ship Date',
             INPUT_COLUMNS['ORDER_ID']: 'Order ID',
             INPUT_COLUMNS['SHIPMENT_SUBTOTAL']: 'Transaction Amount',
             INPUT_COLUMNS['PRODUCT_NAME']: 'Product Names'
