@@ -155,6 +155,9 @@ class OrderHistoryProcessor:
         # Format Ship Date to YYYY-MM-DD format (drop time)
         output_df['Ship Date'] = output_df['Ship Date'].dt.strftime('%Y-%m-%d')
         
+        # Format Transaction Amount to two decimal places
+        output_df['Transaction Amount'] = output_df['Transaction Amount'].round(2).map('{:.2f}'.format)
+        
         # Select only output columns
         self.processed_df = output_df[OUTPUT_COLUMNS]
         
