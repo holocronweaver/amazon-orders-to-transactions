@@ -25,15 +25,15 @@ OUTPUT_COLUMNS = [
 # Amazon URL template
 AMAZON_ORDER_URL_TEMPLATE = 'https://amazon.com/gp/your-account/order-details?orderID={}'
 
-# Data type specifications for pandas
+# Data type specifications for pandas - use object for mixed/problematic columns
 PANDAS_DTYPES = {
     'Website': 'string',
     'Order ID': 'string', 
     'Currency': 'string',
-    'Unit Price': 'float64',
-    'Shipment Item Subtotal': 'float64',
+    'Unit Price': 'object',  # Handle 'Not Available' values
+    'Shipment Item Subtotal': 'object',  # Handle 'Not Available' values  
     'Product Name': 'string',
-    'Quantity': 'int64',
+    'Quantity': 'object',  # Handle 'Not Available' values
     'Order Status': 'string'
 }
 

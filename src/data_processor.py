@@ -55,6 +55,13 @@ class OrderHistoryProcessor:
             **DATE_PARSER_KWARGS
         )
         
+        # Convert 'Not Available' and similar strings to NaN for numeric columns
+        numeric_columns = [INPUT_COLUMNS['SHIPMENT_SUBTOTAL'], 'Unit Price', 'Quantity']
+        for col in numeric_columns:
+            if col in self.df.columns:
+                # Replace non-numeric strings with NaN, then convert to numeric
+                self.df[col] = pd.to_numeric(self.df[col], errors='coerce')
+        
         # Remove any rows with missing critical data
         required_columns = [
             INPUT_COLUMNS['ORDER_ID'],
@@ -85,7 +92,6 @@ class OrderHistoryProcessor:
             INPUT_COLUMNS['SHIPMENT_SUBTOTAL']
         ]).agg({
             INPUT_COLUMNS['ORDER_DATE']: 'first',  # Take first occurrence date
-            INPUT_COLUMNS['SHIPMENT_SUBTOTAL']: 'first',  # Amount is the same within group
             INPUT_COLUMNS['PRODUCT_NAME']: lambda x: '; '.join(x.astype(str))  # Concatenate product names
         }).reset_index()
         
