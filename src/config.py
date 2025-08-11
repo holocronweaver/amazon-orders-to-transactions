@@ -21,8 +21,9 @@ OUTPUT_COLUMNS = [
     'Ship Date',
     'Order ID', 
     'Transaction Amount',
+    'Order Total',
     'Product Names',
-    'Order URL'
+    'Order URL',
 ]
 
 # Amazon URL template

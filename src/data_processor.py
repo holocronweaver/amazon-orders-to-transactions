@@ -141,6 +141,13 @@ class OrderHistoryProcessor:
         # Generate URLs
         url_df = self.generate_order_urls(grouped_df)
         
+        # Calculate Order Total for each Order ID (sum of all Total Owed for that order)
+        order_totals = self.df.groupby(INPUT_COLUMNS['ORDER_ID'])[INPUT_COLUMNS['TOTAL_OWED']].sum().reset_index()
+        order_totals = order_totals.rename(columns={INPUT_COLUMNS['TOTAL_OWED']: 'Order Total'})
+        
+        # Merge Order Total back into the grouped data
+        url_df = url_df.merge(order_totals, left_on=INPUT_COLUMNS['ORDER_ID'], right_on=INPUT_COLUMNS['ORDER_ID'], how='left')
+        
         # Sort by date
         final_df = self.sort_by_date(url_df)
         
@@ -157,6 +164,9 @@ class OrderHistoryProcessor:
         
         # Format Transaction Amount to two decimal places
         output_df['Transaction Amount'] = output_df['Transaction Amount'].round(2).map('{:.2f}'.format)
+        
+        # Format Order Total to two decimal places
+        output_df['Order Total'] = output_df['Order Total'].round(2).map('{:.2f}'.format)
         
         # Select only output columns
         self.processed_df = output_df[OUTPUT_COLUMNS]
