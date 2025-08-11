@@ -44,6 +44,17 @@ Convert Amazon order history CSV data (individual items per row) into consolidat
 - Performance tests for large CSV files
 - Data validation tests using pandas assertions
 
+# Phase 6: Integrate Returns Payment Data
+- Using @Retail.OrdersReturned.Payments.1 as an example, add a new returns data input.
+- Each return payment data row will have a corresponding transaction row.
+- Here is a mapping between returns payment data columns and transactions columns:
+  - OrderID -> Order ID
+  - Refund Completion Date -> Ship Date
+  - AmountRefunded -> Transaction Amount
+  - payment data has no product names, so infer from corresponding entry in order data using the payment data order ID and amount refunded to find the corresponding order (where amount refunded in payment data corresponds to Total Owed in order data)
+  - similarly 'Order Total' can be inferred from the corresponding order ID in order data (by summing 'total owed' of each item with that order ID, which is how it is already being calculated for non-refund transactions)
+  - order URL can be derived from order ID as ususal
+
 ## Key Implementation Details
 
 ### Pandas-Based Grouping Logic
