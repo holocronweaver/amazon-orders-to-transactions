@@ -6,66 +6,66 @@ Convert Amazon order history CSV data (individual items per row) into consolidat
 ## Phase 1: Core Data Processing Module
 **File: `src/data_processor.py`**
 - Create `OrderHistoryProcessor` class with methods:
-  - `load_csv()` - Read Amazon CSV with proper encoding handling
-  - `parse_order_data()` - Convert CSV rows to structured data objects
-  - `group_by_order_and_amount()` - Group items by Order ID + Shipment Item Subtotal
-  - `aggregate_transactions()` - Sum amounts and combine product names
-  - `generate_order_urls()` - Create Amazon order detail URLs
-  - `sort_by_date()` - Sort transactions by date (most recent first)
+  - `load_csv()` - Load CSV using pandas with proper encoding
+  - `clean_data()` - Handle missing values, data type conversions
+  - `group_transactions()` - Group by Order ID + Shipment Item Subtotal using pandas groupby
+  - `aggregate_data()` - Sum amounts and combine product names with pandas agg functions
+  - `generate_order_urls()` - Create Amazon URLs using vectorized operations
+  - `sort_by_date()` - Sort using pandas sort_values
 
-## Phase 2: Data Models
-**File: `src/models.py`**
-- `OrderItem` dataclass - Individual CSV row representation
-- `Transaction` dataclass - Grouped transaction representation with fields:
-  - order_date, order_id, transaction_amount, product_names, order_url
+## Phase 2: Data Processing with Pandas
+**File: `src/data_processor.py` (continued)**
+- Use pandas DataFrame for all data operations:
+  - `pd.read_csv()` for input with encoding detection
+  - `pd.to_datetime()` for date parsing
+  - `df.groupby()` for transaction grouping
+  - `df.agg()` for aggregating amounts and concatenating product names
+  - `df.sort_values()` for date sorting
+  - `df.to_csv()` for output
 
-## Phase 3: CSV I/O Module
-**File: `src/csv_handler.py`**
-- `CSVReader` class - Handle input CSV parsing with error handling
-- `CSVWriter` class - Output transaction CSV with proper formatting
-- Handle edge cases: empty files, malformed data, encoding issues
+## Phase 3: Configuration & Utilities
+**File: `src/config.py`**
+- Column mapping constants for pandas operations
+- Output format specifications
+- URL template patterns
+- Data type specifications for pandas
 
 ## Phase 4: Main Application Logic
 **File: `main.py`** (enhance existing)
 - Command-line argument parsing (input file, output file)
-- Error handling and logging
-- Progress indication for large files
-- Integration of all modules
+- Error handling and logging with pandas-specific exceptions
+- Progress indication using pandas chunking for large files
+- Integration of pandas-based processing
 
-## Phase 5: Configuration & Utilities
-**File: `src/config.py`**
-- Column mapping constants
-- Output format specifications
-- URL template patterns
-
-## Phase 6: Testing & Validation
+## Phase 5: Testing & Validation
 **File: `tests/`**
-- Unit tests for each module
+- Unit tests for pandas operations
 - Integration tests with sample data
-- Edge case handling tests
-- Data validation tests
+- Performance tests for large CSV files
+- Data validation tests using pandas assertions
 
 ## Key Implementation Details
 
-### Grouping Logic
-- Group by (Order ID, Shipment Item Subtotal) to handle partial refunds/charges
-- This handles cases where orders have multiple transactions with different amounts
+### Pandas-Based Grouping Logic
+- Use `df.groupby(['Order ID', 'Shipment Item Subtotal'])` to handle partial refunds/charges
+- Leverage pandas' efficient grouping for large datasets
 
-### Amount Handling
+### Amount Handling with Pandas
 - Positive values = charges, negative = refunds
-- Aggregate "Shipment Item Subtotal" values within each group
+- Use `df.groupby().agg({'Shipment Item Subtotal': 'sum'})` for aggregation
+- Pandas handles Decimal/float precision automatically
 
-### Product Name Aggregation
-- Semicolon-separated concatenation of all product names in the group
-- Handle special characters and encoding properly
+### Product Name Aggregation with Pandas
+- Use `df.groupby().agg({'Product Name': lambda x: '; '.join(x)})` for concatenation
+- Pandas handles special characters and encoding efficiently
 
-### Date Sorting
-- Parse ISO format dates from "Order Date" column
-- Sort final output by date descending (most recent first)
+### Date Sorting with Pandas
+- Use `pd.to_datetime()` for parsing ISO format dates
+- Use `df.sort_values('Order Date', ascending=False)` for descending sort
 
-### URL Generation
-- Template: `amazon.com/gp/your-account/order-details?orderID={order_id}`
-- Extract Order ID from input data
+### URL Generation with Pandas
+- Use pandas vectorized string operations: `df['Order URL'] = 'amazon.com/gp/your-account/order-details?orderID=' + df['Order ID']`
+- Efficient for large datasets
 
 ## Output CSV Structure
 1. Order Date
@@ -75,6 +75,14 @@ Convert Amazon order history CSV data (individual items per row) into consolidat
 5. Order URL
 
 ## Dependencies
-- Python 3.9+ (as specified in pyproject.toml)
-- Standard library: csv, dataclasses, datetime, argparse
-- Consider pandas if data processing becomes complex
+- Python 3.12+ (as specified in pyproject.toml)
+- pandas - Core data processing library
+- Standard library: argparse, logging
+
+## Implementation Benefits with Pandas
+- **Performance**: Vectorized operations for large CSV files
+- **Memory Efficiency**: Chunked processing for very large files
+- **Data Types**: Automatic type inference and conversion
+- **Grouping**: Efficient groupby operations with multiple aggregation functions
+- **Error Handling**: Built-in handling of missing/malformed data
+- **Output**: Direct CSV export with proper formatting

@@ -1,7 +1,23 @@
 [project]
 name = "amazon-order-history"
 version = "0.1.0"
-description = "Add your description here"
+description = "Convert Amazon order history CSV to consolidated transaction format"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "pandas>=2.0.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0.0",
+]
+
+[project.scripts]
+amazon-order-history = "main:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = ["-v", "--tb=short"]
