@@ -62,7 +62,7 @@ RETURNS_DTYPES = {
 #### CLI Enhancements:
 ```python
 parser.add_argument(
-    '--returns-file',
+    '--returns',
     type=Path,
     help='Optional returns payment CSV file to include refund transactions'
 )
@@ -70,7 +70,7 @@ parser.add_argument(
 
 #### Processing Flow:
 1. Process order history as usual → order transactions
-2. If `--returns-file` provided:
+2. If `--returns` provided:
    - Process returns data → returns transactions  
    - Combine both datasets
    - Sort combined data by Ship Date
@@ -155,7 +155,7 @@ Ship Date,Order ID,Transaction Amount,Order Total,Product Names,Order URL
 ## Benefits
 - **Complete Transaction History**: Shows both purchases and refunds
 - **Backwards Compatible**: Existing order-only processing still works
-- **Optional Feature**: Returns integration only when `--returns-file` provided  
+- **Optional Feature**: Returns integration only when `--returns` provided  
 - **Accurate Refund Tracking**: Negative amounts clearly indicate refunds
 - **Product Context**: Inferred product names provide transaction context
 
@@ -165,7 +165,7 @@ Ship Date,Order ID,Transaction Amount,Order Total,Product Names,Order URL
 uv run python main.py orders.csv transactions.csv
 
 # Orders + returns combined
-uv run python main.py orders.csv transactions.csv --returns-file returns.csv
+uv run python main.py orders.csv transactions.csv --returns returns.csv
 ```
 
 ## Testing Strategy

@@ -64,6 +64,12 @@ Examples:
         version='%(prog)s 0.1.0'
     )
     
+    parser.add_argument(
+        '-r', '--returns',
+        type=Path,
+        help='Optional returns payment CSV file to include refund transactions'
+    )
+    
     return parser.parse_args()
 
 
@@ -89,6 +95,18 @@ def validate_output_file(file_path: Path) -> None:
         logging.warning(f"Output file will be overwritten: {file_path}")
 
 
+def validate_returns_file(file_path: Path) -> None:
+    """Validate that returns file exists and is readable."""
+    if not file_path.exists():
+        raise FileNotFoundError(f"Returns file not found: {file_path}")
+    
+    if not file_path.is_file():
+        raise ValueError(f"Returns path is not a file: {file_path}")
+    
+    if file_path.suffix.lower() != '.csv':
+        logging.warning(f"Returns file does not have .csv extension: {file_path}")
+
+
 def main() -> int:
     """Main application entry point."""
     try:
@@ -103,13 +121,32 @@ def main() -> int:
         validate_input_file(args.input_file)
         validate_output_file(args.output_file)
         
-        # Process the data
+        # Validate returns file if provided
+        if args.returns:
+            validate_returns_file(args.returns)
+        
+        # Process the order data
         processor = OrderHistoryProcessor()
         processed_df = processor.process(args.input_file)
+        
+        # Process returns data if provided
+        if args.returns:
+            logger.info(f"Processing returns data from: {args.returns}")
+            returns_df = processor.process_returns(args.returns)
+            
+            # Combine order and returns data
+            combined_df = processor.combine_transactions(returns_df)
+            
+            # Update processed_df to the combined data
+            processor.processed_df = combined_df
+            processed_df = combined_df
+        
+        # Save final results
         processor.save_csv(args.output_file)
         
         # Report results
-        logger.info(f"Successfully processed {len(processed_df)} transactions")
+        transaction_type = "combined order and return transactions" if args.returns else "transactions"
+        logger.info(f"Successfully processed {len(processed_df)} {transaction_type}")
         logger.info(f"Output saved to: {args.output_file}")
         
         return 0
@@ -124,7 +161,7 @@ def main() -> int:
         
     except Exception as e:
         logging.error(f"Unexpected error: {e}")
-        if args.verbose:
+        if hasattr(args, 'verbose') and args.verbose:
             logging.exception("Full traceback:")
         return 3
 

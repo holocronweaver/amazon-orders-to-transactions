@@ -10,7 +10,9 @@ from .config import (
     OUTPUT_COLUMNS, 
     AMAZON_ORDER_URL_TEMPLATE,
     PANDAS_DTYPES,
-    DATE_PARSER_KWARGS
+    DATE_PARSER_KWARGS,
+    RETURNS_COLUMNS,
+    RETURNS_DTYPES
 )
 
 
@@ -188,3 +190,164 @@ class OrderHistoryProcessor:
         )
         
         self.logger.info("Save complete")
+    
+    # Returns Processing Methods
+    
+    def load_returns_csv(self, file_path: str | Path) -> pd.DataFrame:
+        """Load returns payment CSV with proper encoding and data types."""
+        try:
+            self.logger.info(f"Loading returns CSV from {file_path}")
+            
+            returns_df = pd.read_csv(
+                file_path,
+                dtype=RETURNS_DTYPES,
+                encoding='utf-8-sig',
+                low_memory=False
+            )
+            
+            self.logger.info(f"Loaded {len(returns_df)} returns from CSV")
+            return returns_df
+            
+        except Exception as e:
+            self.logger.error(f"Failed to load returns CSV: {e}")
+            raise
+    
+    def clean_returns_data(self, returns_df: pd.DataFrame) -> pd.DataFrame:
+        """Clean and prepare returns data for processing."""
+        self.logger.info("Cleaning returns data...")
+        
+        # Parse refund completion dates
+        returns_df[RETURNS_COLUMNS['REFUND_DATE']] = pd.to_datetime(
+            returns_df[RETURNS_COLUMNS['REFUND_DATE']],
+            errors='coerce',
+            **DATE_PARSER_KWARGS
+        )
+        
+        # Convert amount refunded to numeric
+        returns_df[RETURNS_COLUMNS['AMOUNT_REFUNDED']] = pd.to_numeric(
+            returns_df[RETURNS_COLUMNS['AMOUNT_REFUNDED']], 
+            errors='coerce'
+        )
+        
+        # Remove rows with missing critical data
+        required_columns = [
+            RETURNS_COLUMNS['ORDER_ID'],
+            RETURNS_COLUMNS['REFUND_DATE'],
+            RETURNS_COLUMNS['AMOUNT_REFUNDED']
+        ]
+        
+        initial_count = len(returns_df)
+        returns_df = returns_df.dropna(subset=required_columns)
+        dropped_count = initial_count - len(returns_df)
+        
+        if dropped_count > 0:
+            self.logger.warning(f"Dropped {dropped_count} returns with missing critical data")
+        
+        return returns_df
+    
+    def calculate_order_totals_for_returns(self, returns_df: pd.DataFrame) -> pd.DataFrame:
+        """Calculate Order Total for returns by summing Total Owed from order data."""
+        if self.df is None:
+            raise ValueError("No order data loaded. Call load_csv() first.")
+        
+        # Use the existing order totals calculation (same as regular transactions)
+        order_totals = self.df.groupby(INPUT_COLUMNS['ORDER_ID'])[INPUT_COLUMNS['TOTAL_OWED']].sum().reset_index()
+        order_totals = order_totals.rename(columns={INPUT_COLUMNS['TOTAL_OWED']: 'Order Total'})
+        
+        # Merge Order Total into returns data
+        returns_with_totals = returns_df.merge(
+            order_totals,
+            left_on='Order ID',
+            right_on=INPUT_COLUMNS['ORDER_ID'],
+            how='left'
+        )
+        
+        return returns_with_totals
+    
+    def infer_product_names_for_returns(self, returns_df: pd.DataFrame) -> pd.DataFrame:
+        """Infer product names for returns by matching to order data."""
+        if self.df is None:
+            raise ValueError("No order data loaded. Call load_csv() first.")
+        
+        self.logger.info("Inferring product names for returns...")
+        
+        for idx, return_row in returns_df.iterrows():
+            order_id = return_row['Order ID']
+            refund_amount = abs(return_row['Transaction Amount'])
+            
+            # Find matching order items by Order ID and amount
+            matching_items = self.df[
+                (self.df[INPUT_COLUMNS['ORDER_ID']] == order_id) &
+                (abs(self.df[INPUT_COLUMNS['TOTAL_OWED']] - refund_amount) < 0.01)
+            ]
+            
+            if not matching_items.empty:
+                # Use product names from matching items (truncate each to 60 chars)
+                product_names = '; '.join([str(name)[:60] for name in matching_items[INPUT_COLUMNS['PRODUCT_NAME']]])
+                returns_df.at[idx, 'Product Names'] = product_names
+            else:
+                # Fallback if no match
+                returns_df.at[idx, 'Product Names'] = f"Return - Order {order_id}"
+        
+        return returns_df
+    
+    def process_returns(self, returns_file: str | Path) -> pd.DataFrame:
+        """Complete returns processing pipeline."""
+        if self.df is None:
+            raise ValueError("No order data loaded. Call process() first to load order data.")
+        
+        self.logger.info("Starting returns processing...")
+        
+        # Load and clean returns data
+        returns_df = self.load_returns_csv(returns_file)
+        cleaned_returns = self.clean_returns_data(returns_df)
+        
+        # Convert amounts to negative (refunds) - do this before renaming
+        cleaned_returns['Transaction Amount'] = -cleaned_returns[RETURNS_COLUMNS['AMOUNT_REFUNDED']].abs()
+        
+        # Rename columns for consistency
+        cleaned_returns = cleaned_returns.rename(columns={
+            RETURNS_COLUMNS['ORDER_ID']: 'Order ID',
+            RETURNS_COLUMNS['REFUND_DATE']: 'Ship Date'
+        })
+        
+        # Calculate Order Total from order data
+        returns_with_totals = self.calculate_order_totals_for_returns(cleaned_returns)
+        
+        # Infer product names from order data
+        returns_with_products = self.infer_product_names_for_returns(returns_with_totals)
+        
+        # Generate order URLs
+        returns_with_urls = self.generate_order_urls(returns_with_products)
+        
+        # Format dates and amounts
+        returns_with_urls['Ship Date'] = returns_with_urls['Ship Date'].dt.strftime('%Y-%m-%d')
+        returns_with_urls['Transaction Amount'] = returns_with_urls['Transaction Amount'].round(2).map('{:.2f}'.format)
+        returns_with_urls['Order Total'] = returns_with_urls['Order Total'].round(2).map('{:.2f}'.format)
+        
+        # Select only output columns
+        final_returns = returns_with_urls[OUTPUT_COLUMNS]
+        
+        self.logger.info(f"Returns processing complete. Generated {len(final_returns)} return transactions")
+        return final_returns
+    
+    def combine_transactions(self, returns_df: pd.DataFrame) -> pd.DataFrame:
+        """Combine order transactions and returns transactions."""
+        if self.processed_df is None:
+            raise ValueError("No processed order data available. Call process() first.")
+        
+        self.logger.info("Combining order and returns transactions...")
+        
+        # Combine both DataFrames
+        combined_df = pd.concat([self.processed_df, returns_df], ignore_index=True)
+        
+        # Sort by Ship Date (most recent first)
+        combined_df['Ship Date'] = pd.to_datetime(combined_df['Ship Date'])
+        combined_df = combined_df.sort_values('Ship Date', ascending=False).reset_index(drop=True)
+        
+        # Convert Ship Date back to string format
+        combined_df['Ship Date'] = combined_df['Ship Date'].dt.strftime('%Y-%m-%d')
+        
+        self.logger.info(f"Combined {len(self.processed_df)} orders with {len(returns_df)} returns = {len(combined_df)} total transactions")
+        
+        return combined_df

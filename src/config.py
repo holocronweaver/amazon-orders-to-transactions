@@ -48,3 +48,17 @@ DATE_PARSER_KWARGS = {
     'format': 'ISO8601',
     'utc': True
 }
+
+# Returns CSV column mappings
+RETURNS_COLUMNS = {
+    'ORDER_ID': 'OrderID',
+    'REFUND_DATE': 'RefundCompletionDate',
+    'AMOUNT_REFUNDED': 'AmountRefunded'
+}
+
+# Returns data types
+RETURNS_DTYPES = {
+    'OrderID': 'string',
+    'RefundCompletionDate': 'object',
+    'AmountRefunded': 'object'
+}
