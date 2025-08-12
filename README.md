@@ -16,7 +16,7 @@ I personally use this tool to track my spending with [Lunch Money](https://lunch
 1. Export your Amazon order history (may take an hour or longer): https://www.amazon.com/hz/privacy-central/data-requests/preview.html
 1. While you wait, install this script using `pipx install .`, `uv tool install .`, or a similar Python app manager.
 1. Once export is complete, download the resulting ZIP file and extract the `Retail.OrderHistory.1.csv` and `Retail.OrdersReturned.Payments.1.csv` files, ideally to the same location as the script to avoid specifiying paths.
-1. Run the script, pointing it to your files and desired output filename (see [Usage](#usage)).
+1. [Run the script](#usage), pointing it to your files and desired output filename.
 1. Done! The [output transactions CSV](#output) file will not perfectly match you credit card transactions since Amazon sometimes charges one transaction per shipment and other times charges the whole order as one transaction. Hence the reason both transaction amounts (cost of a shipment or refund) and overall order totals are given.
 
 ## Usage
