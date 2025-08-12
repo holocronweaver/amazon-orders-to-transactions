@@ -6,8 +6,8 @@ import tempfile
 from pathlib import Path
 from io import StringIO
 
-from src.data_processor import OrderHistoryProcessor
-from src.config import INPUT_COLUMNS, OUTPUT_COLUMNS
+from amazon_order_history_to_transactions.data_processor import OrderHistoryProcessor
+from amazon_order_history_to_transactions.config import INPUT_COLUMNS, OUTPUT_COLUMNS
 
 
 @pytest.fixture

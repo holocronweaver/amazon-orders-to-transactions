@@ -35,7 +35,7 @@ test = [
 ]
 
 [project.scripts]
-amazon-order-history-to-transactions = "src.main:main"
+amazon-order-history-to-transactions = "amazon_order_history_to_transactions.main:main"
 
 [project.urls]
 Homepage = "https://github.com/holocronweaver/amazon-order-history-to-transactions"
@@ -47,7 +47,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src"]
+packages = ["amazon_order_history_to_transactions"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
