@@ -17,7 +17,7 @@ I personally use this tool to track my spending with [Lunch Money](https://lunch
 1. While you wait, install this script using `pipx install .`, `uv tool install .`, or a similar Python app manager.
 1. Once export is complete, download the resulting ZIP file and extract the `Retail.OrderHistory.1.csv` and `Retail.OrdersReturned.Payments.1.csv` files, ideally to the same location as the script to avoid specifiying paths.
 1. Run the script, pointing it to your files and desired output filename (see [Usage](#usage)).
-1. Done! Your transactions CSV file will not perfectly match 
+1. Done! The [output transactions CSV](#output) file will not perfectly match you credit card transactions since Amazon sometimes charges one transaction per shipment and other times charges the whole order as one transaction. Hence the reason both transaction amounts (cost of a shipment or refund) and overall order totals are given.
 
 ## Usage
 
@@ -31,4 +31,45 @@ Orders + returns combined:
 
 ```
 amazon-order-history-to-transactions Retail.OrderHistory.1.csv transactions.csv --returns Retail.OrdersReturned.Payments.1.csv
+```
+
+## Output
+
+The script produces a CSV file with the following columns:
+
+| Column | Description |
+|--------|-------------|
+| **Ship Date** | Date when the order shipped (YYYY-MM-DD format). For returns, this is the refund completion date. |
+| **Order ID** | Amazon order identifier that links to the original order |
+| **Transaction Amount** | Total amount charged/refunded for a single shipment/return. Positive values are charges, negative values are refunds. |
+| **Order Total** | Total cost of the entire order (sum of all items for that Order ID). Useful when the whole order was charged to your card as one transaction, rather than one transaction per shipment. |
+| **Product Names** | Semicolon-separated list of product names. Each product name is truncated to 60 characters max for readability. |
+| **Order URL** | Direct link to Amazon order details page |
+
+### Transaction Grouping
+
+The script groups individual order items into transactions based on:
+- **Order ID** + **Shipment Item Subtotal** (to handle partial charges/refunds)
+- Items with the same Order ID and subtotal amount are combined into a single transaction row
+- Product names from grouped items are concatenated with semicolons
+
+### Example Output
+
+```csv
+Ship Date,Order ID,Transaction Amount,Order Total,Product Names,Order URL
+2025-08-10,111-1111111-1111111,-13.99,61.58,Watermelon,https://amazon.com/gp/your-account/order-details?orderID=111-1111111-1111111
+2025-08-05,111-1111111-1111111,61.58,61.58,Watermelon; Organic Red Onion,https://amazon.com/gp/your-account/order-details?orderID=111-1111111-1111111
+2025-08-04,222-2222222-2222222,25.99,25.99,Wireless Headphones,https://amazon.com/gp/your-account/order-details?orderID=222-2222222-2222222
+```
+
+**Note:** Returns appear as separate rows with negative Transaction Amount values, but maintain the same Order Total as the original order for context.
+
+## Develop
+
+To make development easier, I prefer to install via pipx with the `--editable`
+flag so that all updates to the code automatically reflect in the installed
+tool:
+
+```
+pipx install --editable .
 ```
