@@ -11,7 +11,7 @@ import logging
 import sys
 from pathlib import Path
 
-from src.data_processor import OrderHistoryProcessor
+from .data_processor import OrderHistoryProcessor
 
 
 def setup_logging(verbose: bool = False) -> None:

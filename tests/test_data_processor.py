@@ -14,9 +14,9 @@ from src.config import INPUT_COLUMNS, OUTPUT_COLUMNS
 def sample_csv_data():
     """Sample Amazon order history CSV data for testing."""
     return """Website,Order ID,Order Date,Purchase Order Number,Currency,Unit Price,Unit Price Tax,Shipping Charge,Total Discounts,Total Owed,Shipment Item Subtotal,Shipment Item Subtotal Tax,ASIN,Product Condition,Quantity,Payment Instrument Type,Order Status,Shipment Status,Ship Date,Shipping Option,Shipping Address,Billing Address,Carrier Name & Tracking Number,Product Name,Gift Message,Gift Sender Name,Gift Recipient Contact Details,Item Serial Number
-Amazon.com,111-1111111-1111111,2025-08-04T20:39:52Z,Not Applicable,USD,13.99,0,0,0,13.99,61.54,0.04,B01LXS7YAM,New,1,Visa - 9724,Closed,Shipped,2025-08-05T03:08:19.087Z,scheduled-houdini,Test Address,Test Address,CARRIER123,Beef Chuck Roast,Not Available,Not Available,Not Available,Not Available
-Amazon.com,111-1111111-1111111,2025-08-04T20:39:52Z,Not Applicable,USD,0.99,0,0,0,0.99,61.54,0.04,B000P6J1FE,New,1,Visa - 9724,Closed,Shipped,2025-08-05T03:08:19.087Z,scheduled-houdini,Test Address,Test Address,CARRIER123,Organic Red Onion,Not Available,Not Available,Not Available,Not Available
-Amazon.com,222-2222222-2222222,2025-08-03T15:30:00Z,Not Applicable,USD,25.99,0,0,0,25.99,25.99,0,B123456789,New,1,Visa - 9724,Closed,Shipped,2025-08-04T10:00:00Z,standard,Test Address,Test Address,CARRIER456,Wireless Headphones,Not Available,Not Available,Not Available,Not Available"""
+Amazon.com,111-1111111-1111111,2025-08-04T20:39:52Z,Not Applicable,USD,13.99,0,0,0,13.99,61.54,0.04,B01LXS7YAM,New,1,Visa - 111,Closed,Shipped,2025-08-05T03:08:19.087Z,scheduled-houdini,Test Address,Test Address,CARRIER123,Beef Chuck Roast,Not Available,Not Available,Not Available,Not Available
+Amazon.com,111-1111111-1111111,2025-08-04T20:39:52Z,Not Applicable,USD,0.99,0,0,0,0.99,61.54,0.04,B000P6J1FE,New,1,Visa - 111,Closed,Shipped,2025-08-05T03:08:19.087Z,scheduled-houdini,Test Address,Test Address,CARRIER123,Organic Red Onion,Not Available,Not Available,Not Available,Not Available
+Amazon.com,222-2222222-2222222,2025-08-03T15:30:00Z,Not Applicable,USD,25.99,0,0,0,25.99,25.99,0,B123456789,New,1,Visa - 111,Closed,Shipped,2025-08-04T10:00:00Z,standard,Test Address,Test Address,CARRIER456,Wireless Headphones,Not Available,Not Available,Not Available,Not Available"""
 
 
 @pytest.fixture
@@ -58,13 +58,13 @@ class TestOrderHistoryProcessor:
         processor.load_csv(sample_csv_file)
         cleaned_df = processor.clean_data()
         
-        # Check that order dates were parsed
-        assert pd.api.types.is_datetime64_any_dtype(cleaned_df['Order Date'])
+        # Check that ship dates were parsed
+        assert pd.api.types.is_datetime64_any_dtype(cleaned_df['Ship Date'])
         
         # Check that no critical data is missing
         required_columns = [
             INPUT_COLUMNS['ORDER_ID'],
-            INPUT_COLUMNS['ORDER_DATE'], 
+            INPUT_COLUMNS['SHIP_DATE'], 
             INPUT_COLUMNS['SHIPMENT_SUBTOTAL'],
             INPUT_COLUMNS['PRODUCT_NAME']
         ]
@@ -92,10 +92,10 @@ class TestOrderHistoryProcessor:
         """Test order URL generation."""
         # Create simple test DataFrame
         test_df = pd.DataFrame({
-            'Order ID': ['111-1111111-1111111', '222-2222222-2222222'],
-            'Order Date': pd.to_datetime(['2025-08-04', '2025-08-03']),
-            'Shipment Item Subtotal': [61.54, 25.99],
-            'Product Name': ['Product 1', 'Product 2']
+            INPUT_COLUMNS['ORDER_ID']: ['111-1111111-1111111', '222-2222222-2222222'],
+            INPUT_COLUMNS['SHIP_DATE']: pd.to_datetime(['2025-08-04', '2025-08-03']),
+            INPUT_COLUMNS['SHIPMENT_SUBTOTAL']: [61.54, 25.99],
+            INPUT_COLUMNS['PRODUCT_NAME']: ['Product 1', 'Product 2']
         })
         
         result_df = processor.generate_order_urls(test_df)
@@ -108,17 +108,17 @@ class TestOrderHistoryProcessor:
         """Test date sorting functionality."""
         # Create test DataFrame with unsorted dates
         test_df = pd.DataFrame({
-            'Order Date': pd.to_datetime(['2025-08-03', '2025-08-05', '2025-08-04']),
-            'Order ID': ['333', '111', '222'],
-            'Shipment Item Subtotal': [10.0, 20.0, 30.0],
-            'Product Name': ['C', 'A', 'B']
+            INPUT_COLUMNS['SHIP_DATE']: pd.to_datetime(['2025-08-03', '2025-08-05', '2025-08-04']),
+            INPUT_COLUMNS['ORDER_ID']: ['333', '111', '222'],
+            INPUT_COLUMNS['SHIPMENT_SUBTOTAL']: [10.0, 20.0, 30.0],
+            INPUT_COLUMNS['PRODUCT_NAME']: ['C', 'A', 'B']
         })
         
         sorted_df = processor.sort_by_date(test_df)
         
         # Should be sorted with most recent first
         expected_order = ['111', '222', '333']  # 08-05, 08-04, 08-03
-        actual_order = sorted_df['Order ID'].tolist()
+        actual_order = sorted_df[INPUT_COLUMNS['ORDER_ID']].tolist()
         assert actual_order == expected_order
     
     def test_process_end_to_end(self, processor, sample_csv_file):
@@ -132,8 +132,8 @@ class TestOrderHistoryProcessor:
         # Should have 2 transactions (grouped)
         assert len(result_df) == 2
         
-        # Check that data is sorted by date (most recent first)
-        dates = pd.to_datetime(result_df['Order Date'])
+        # Check that data is sorted by date (most recent first)  
+        dates = pd.to_datetime(result_df['Ship Date'])
         assert dates.iloc[0] >= dates.iloc[1]
         
         # Check that URLs are generated

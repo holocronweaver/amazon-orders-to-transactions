@@ -1,9 +1,9 @@
 Convert exported Amazon order and return history into something close to credit card transactions.
 
 ## Why
-To better track my finances, I wanted to figure out what Amazon orders / products each of my credit card transactions corresponded to so I could categorize the transactions and figure out where my spending is going.
+To better track my finances, I wanted to identify which Amazon orders / products each of my credit card transactions corresponded to so I could categorize the transactions and figure out where my spending is going.
 
-Amazon has a [transactions page](https://www.amazon.com/cpe/yourpayments/transactions), but it does not allow navigating directly to specific time periods, instead requiring you to hit the 'Next' page button as many times as needed to go back in time. Worse, you cannot link to transactions pages as they do not modify the URL, so if you lose your place (or Amazon gives the dreaded "you have no transactions" error) you have to start all over again.
+Amazon has a [transactions page](https://www.amazon.com/cpe/yourpayments/transactions), but it does not allow navigating directly to specific time periods, instead requiring you to hit the 'Next' page button as many times as needed to go back in time. Worse, you cannot link to transactions pages as they do not modify the URL, so if you lose your place (or Amazon gives the dreaded "you have no transactions" error) and you have to start all over again.
 
 There are other tools like the Chrome extension [Amazon Order History Reporter (Azad)](https://github.com/philipmulcahy/azad) which can export your order history by scraping Amazon pages, but I found them all to output lots of missing data to the point of being nearly unusable. To be fair, Amazon order history and transacions pages are an ever moving target. 
 
@@ -73,3 +73,29 @@ tool:
 ```
 pipx install --editable .
 ```
+
+### Publishing to PyPI
+
+The package is configured for PyPI publication. To publish a new version:
+
+1. **Update version** in `pyproject.toml`
+2. **Build the package:**
+   ```bash
+   uv run python -m build
+   ```
+3. **Validate the build:**
+   ```bash
+   uv run python -m twine check dist/*
+   ```
+4. **Upload to PyPI:**
+   ```bash
+   # Test upload (recommended first)
+   uv run python -m twine upload --repository testpypi dist/*
+   
+   # Production upload
+   uv run python -m twine upload dist/*
+   ```
+
+**Prerequisites:**
+- PyPI account with API token configured
+- Install dev dependencies: `uv sync --group dev`
