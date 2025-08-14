@@ -1,5 +1,5 @@
 [project]
-name = "amazon-order-history-to-transactions"
+name = "amazon-orders-to-transactions"
 version = "0.1.1"
 description = "Convert Amazon order history to credit card-like transactions"
 readme = "README.md"
@@ -35,19 +35,19 @@ test = [
 ]
 
 [project.scripts]
-amazon-order-history-to-transactions = "amazon_order_history_to_transactions.main:main"
+amazon-orders-to-transactions = "amazon_orders_to_transactions.main:main"
 
 [project.urls]
-Homepage = "https://github.com/holocronweaver/amazon-order-history-to-transactions"
-Repository = "https://github.com/holocronweaver/amazon-order-history-to-transactions.git"
-Issues = "https://github.com/holocronweaver/amazon-order-history-to-transactions/issues"
+Homepage = "https://github.com/holocronweaver/amazon-orders-to-transactions"
+Repository = "https://github.com/holocronweaver/amazon-orders-to-transactions.git"
+Issues = "https://github.com/holocronweaver/amazon-orders-to-transactions/issues"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["amazon_order_history_to_transactions"]
+packages = ["amazon_orders_to_transactions"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

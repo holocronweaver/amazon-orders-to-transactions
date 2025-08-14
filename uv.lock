@@ -9,7 +9,7 @@ resolution-markers = [
 ]
 
 [[package]]
-name = "amazon-order-history-to-transactions"
+name = "amazon-orders-to-transactions"
 version = "0.1.1"
 source = { editable = "." }
 dependencies = [

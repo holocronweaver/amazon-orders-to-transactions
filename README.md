@@ -24,13 +24,13 @@ I personally use this tool to track my spending with [Lunch Money](https://lunch
 Order transactions only:
 
 ```
-amazon-order-history-to-transactions Retail.OrderHistory.1.csv transactions.csv
+amazon-orders-to-transactions Retail.OrderHistory.1.csv transactions.csv
 ```
 
 Orders + returns combined:
 
 ```
-amazon-order-history-to-transactions Retail.OrderHistory.1.csv transactions.csv --returns Retail.OrdersReturned.Payments.1.csv
+amazon-orders-to-transactions Retail.OrderHistory.1.csv transactions.csv --returns Retail.OrdersReturned.Payments.1.csv
 ```
 
 ## Output
@@ -74,20 +74,26 @@ tool:
 pipx install --editable .
 ```
 
+To run tests:
+
+```
+uv run -m pytest
+```
+
 ### Publishing to PyPI
 
 The package is configured for PyPI publication. To publish a new version:
 
 1. **Update version** in `pyproject.toml`
-2. **Build the package:**
+1. **Build the package:**
    ```bash
    uv run python -m build
    ```
-3. **Validate the build:**
+1. **Validate the build:**
    ```bash
    uv run python -m twine check dist/*
    ```
-4. **Upload to PyPI:**
+1. **Upload to PyPI:**
    ```bash
    # Test upload (recommended first)
    uv run python -m twine upload --repository testpypi dist/*
